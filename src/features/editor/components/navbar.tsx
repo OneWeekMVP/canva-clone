@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { CiFileOn } from "react-icons/ci";
 import { BsCloudCheck, BsCloudSlash } from "react-icons/bs";
 import { useFilePicker } from "use-file-picker";
@@ -10,8 +11,10 @@ import {
   Loader, 
   MousePointerClick, 
   Redo2, 
-  Undo2
+  Undo2,
+  Pencil
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { UserButton } from "@/features/auth/components/user-button";
 
@@ -21,6 +24,7 @@ import { Logo } from "@/features/editor/components/logo";
 import { cn } from "@/lib/utils";
 import { Hint } from "@/components/hint";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
@@ -28,6 +32,8 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useGetProject } from "@/features/projects/api/use-get-project";
+import { useUpdateProject } from "@/features/projects/api/use-update-project";
 
 interface NavbarProps {
   id: string;
@@ -42,7 +48,51 @@ export const Navbar = ({
   activeTool,
   onChangeActiveTool,
 }: NavbarProps) => {
-  const data = useMutationState({
+  const [isEditing, setIsEditing] = useState(false);
+  const [projectName, setProjectName] = useState("");
+
+  const { data } = useGetProject(id);
+  const renameMutation = useUpdateProject(id);
+
+  useEffect(() => {
+    if (data?.name) {
+      setProjectName(data.name);
+    }
+  }, [data?.name]);
+
+  const startEditing = () => {
+    setIsEditing(true);
+  };
+
+  const handleRename = () => {
+    if (projectName.trim() && projectName !== data?.name) {
+      renameMutation.mutate(
+        { name: projectName.trim() },
+        {
+          onSuccess: () => {
+            toast.success("Project renamed successfully");
+            setIsEditing(false);
+          },
+          onError: () => {
+            toast.error("Failed to rename project");
+          },
+        }
+      );
+    } else {
+      setIsEditing(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleRename();
+    } else if (e.key === "Escape") {
+      setIsEditing(false);
+      setProjectName(data?.name || "");
+    }
+  };
+
+  const mutationData = useMutationState({
     filters: {
       mutationKey: ["project", { id }],
       exact: true,
@@ -50,7 +100,7 @@ export const Navbar = ({
     select: (mutation) => mutation.state.status,
   });
 
-  const currentStatus = data[data.length - 1];
+  const currentStatus = mutationData[mutationData.length - 1];
 
   const isError = currentStatus === "error";
   const isPending = currentStatus === "pending";
@@ -82,6 +132,21 @@ export const Navbar = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-60">
             <DropdownMenuItem
+              onSelect={(e) => {
+                e.preventDefault();
+                startEditing();
+              }}
+              className="flex items-center gap-x-2"
+            >
+              <Pencil className="size-4" />
+              <div>
+                <p>{isEditing ? projectName || "Rename" : data?.name || "Rename"}</p>
+                <p className="text-xs text-muted-foreground">
+                  Change project name
+                </p>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuItem
               onClick={() => openFilePicker()}
               className="flex items-center gap-x-2"
             >
@@ -96,6 +161,19 @@ export const Navbar = ({
           </DropdownMenuContent>
         </DropdownMenu>
         <Separator orientation="vertical" className="mx-2" />
+        {isEditing && (
+          <>
+            <Input
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              onBlur={handleRename}
+              onKeyDown={handleKeyDown}
+              className="h-8 w-auto min-w-[150px] max-w-[300px] border-blue-500 focus-visible:ring-blue-500"
+              autoFocus
+            />
+            <Separator orientation="vertical" className="mx-2" />
+          </>
+        )}
         <Hint label="Select" side="bottom" sideOffset={10}>
           <Button
             variant="ghost"

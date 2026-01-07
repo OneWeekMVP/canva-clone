@@ -1,22 +1,17 @@
 "use client";
-
 import { CreditCard, Crown, Home, MessageCircleQuestion } from "lucide-react";
 import { usePathname } from "next/navigation";
-
 import { usePaywall } from "@/features/subscriptions/hooks/use-paywall";
 import { useCheckout } from "@/features/subscriptions/api/use-checkout";
 import { useBilling } from "@/features/subscriptions/api/use-billing";
-
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-
 import { SidebarItem } from "./sidebar-item";
 
 export const SidebarRoutes = () => {
   const mutation = useCheckout();
   const billingMutation = useBilling();
   const { shouldBlock, isLoading, triggerPaywall } = usePaywall();
-
   const pathname = usePathname();
 
   const onClick = () => {
@@ -24,8 +19,21 @@ export const SidebarRoutes = () => {
       triggerPaywall();
       return;
     }
-
     billingMutation.mutate();
+  };
+
+  const handleGetHelp = () => {
+    // Find and click the Echo widget button
+    const echoButton = document.querySelector('button[data-organization-id]') as HTMLButtonElement;
+    if (echoButton) {
+      echoButton.click();
+    } else {
+      // Fallback: try to find any button with echo in class or id
+      const fallbackButton = document.querySelector('[id*="echo-"], [class*="echo-"]') as HTMLButtonElement;
+      if (fallbackButton) {
+        fallbackButton.click();
+      }
+    }
   };
 
   return (
@@ -58,9 +66,10 @@ export const SidebarRoutes = () => {
       <ul className="flex flex-col gap-y-1 px-3">
         <SidebarItem href={pathname} icon={CreditCard} label="Billing" onClick={onClick} />
         <SidebarItem
-          href="mailto:support@example.com"
+          href="#"
           icon={MessageCircleQuestion}
           label="Get Help"
+          onClick={handleGetHelp}
         />
       </ul>
     </div>

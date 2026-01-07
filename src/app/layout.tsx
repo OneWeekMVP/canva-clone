@@ -34,6 +34,7 @@ export default async function RootLayout({
             <Modals />
             <SubscriptionAlert />
             {children}
+            {/* <Toaster position="top-center" /> */}
           </Providers>
         </body>
       </html>
