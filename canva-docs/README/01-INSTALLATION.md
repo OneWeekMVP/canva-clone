@@ -12,6 +12,9 @@ cd canva-clone
 ```
 
 **See:** Fig.1, Fig.2, Fig.3
+(/public/fig1.png)
+(/public/fig2.png)
+(/public/fig3.png)
 
 ### Step 2: Copy Environment File
 
@@ -20,6 +23,7 @@ cp .env.example .env
 ```
 
 **See:** Fig.4
+(/public/fig4.png)
 
 ### Step 3: Check Your Package Manager
 
@@ -65,7 +69,8 @@ Perhaps an environment variable has not been set?
 
 **This is normal!** We'll fix it in the next step by setting up the database.
 
-**See:** Fig.5
+**See:** Fig.
+(/public/fig5.png)
 
 ---
 
