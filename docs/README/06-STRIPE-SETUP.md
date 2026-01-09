@@ -118,6 +118,10 @@ Open a **new terminal** and run:
 ```bash
 stripe login
 ```
+or
+```bash
+./stripe login
+```
 
 This will open your browser - click **"Allow access"**
 
@@ -135,6 +139,10 @@ In the same terminal, run:
 
 ```bash
 stripe listen --forward-to localhost:3000/api/webhooks/stripe
+```
+or
+```bash
+./stripe listen --forward-to localhost:3000/api/webhooks/stripe
 ```
 
 **Important:** Keep this terminal window open! Don't close it.
