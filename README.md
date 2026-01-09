@@ -5,6 +5,7 @@
 A production-ready graphic design SaaS platform with an intuitive drag-and-drop editor, AI-powered features, and complete subscription management. Built with Next.js 14, Fabric.js canvas engine, Replicate AI, and Stripe payments.
 
 **Credit:** This project is based on the tutorial by [Antonio Erdeljac (Code With Antonio)](https://github.com/antonioerdeljac)
+**Docs:** For a comprehensive documentation, go to docs(/docs) folder.
 
 ## ✨ Features
 
