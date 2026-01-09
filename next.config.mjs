@@ -16,9 +16,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "3in8qa7z5u.ufs.sh",
+        hostname: "*.ufs.sh",
       },
     ],
   },
 };
+
 export default nextConfig;
