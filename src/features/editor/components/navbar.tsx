@@ -5,12 +5,12 @@ import { CiFileOn } from "react-icons/ci";
 import { BsCloudCheck, BsCloudSlash } from "react-icons/bs";
 import { useFilePicker } from "use-file-picker";
 import { useMutationState } from "@tanstack/react-query";
-import { 
-  ChevronDown, 
-  Download, 
-  Loader, 
-  MousePointerClick, 
-  Redo2, 
+import {
+  ChevronDown,
+  Download,
+  Loader,
+  MousePointerClick,
+  Redo2,
   Undo2,
   Pencil
 } from "lucide-react";
@@ -140,7 +140,7 @@ export const Navbar = ({
             >
               <Pencil className="size-4" />
               <div>
-                <p>{isEditing ? projectName || "Rename" : data?.name || "Rename"}</p>
+                <p>Rename</p>
                 <p className="text-xs text-muted-foreground">
                   Change project name
                 </p>
@@ -161,19 +161,26 @@ export const Navbar = ({
           </DropdownMenuContent>
         </DropdownMenu>
         <Separator orientation="vertical" className="mx-2" />
-        {isEditing && (
-          <>
-            <Input
-              value={projectName}
-              onChange={(e) => setProjectName(e.target.value)}
-              onBlur={handleRename}
-              onKeyDown={handleKeyDown}
-              className="h-8 w-auto min-w-[150px] max-w-[300px] border-blue-500 focus-visible:ring-blue-500"
-              autoFocus
-            />
-            <Separator orientation="vertical" className="mx-2" />
-          </>
+
+        {/* Always show project name */}
+        {isEditing ? (
+          <Input
+            value={projectName}
+            onChange={(e) => setProjectName(e.target.value)}
+            onBlur={handleRename}
+            onKeyDown={handleKeyDown}
+            className="h-8 w-auto min-w-[150px] max-w-[300px] border-blue-500 focus-visible:ring-blue-500"
+            autoFocus
+          />
+        ) : (
+          <div
+            className="text-sm font-medium truncate max-w-[200px] cursor-pointer hover:text-blue-600"
+            onClick={startEditing}
+          >
+            {projectName || "Untitled"}
+          </div>
         )}
+        <Separator orientation="vertical" className="mx-2" />
         <Hint label="Select" side="bottom" sideOffset={10}>
           <Button
             variant="ghost"
@@ -205,7 +212,7 @@ export const Navbar = ({
           </Button>
         </Hint>
         <Separator orientation="vertical" className="mx-2" />
-        {isPending && ( 
+        {isPending && (
           <div className="flex items-center gap-x-2">
             <Loader className="size-4 animate-spin text-muted-foreground" />
             <div className="text-xs text-muted-foreground">
@@ -213,7 +220,7 @@ export const Navbar = ({
             </div>
           </div>
         )}
-        {!isPending && isError && ( 
+        {!isPending && isError && (
           <div className="flex items-center gap-x-2">
             <BsCloudSlash className="size-[20px] text-muted-foreground" />
             <div className="text-xs text-muted-foreground">
@@ -221,7 +228,7 @@ export const Navbar = ({
             </div>
           </div>
         )}
-        {!isPending && !isError && ( 
+        {!isPending && !isError && (
           <div className="flex items-center gap-x-2">
             <BsCloudCheck className="size-[20px] text-muted-foreground" />
             <div className="text-xs text-muted-foreground">
