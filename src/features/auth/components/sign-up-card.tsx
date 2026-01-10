@@ -15,10 +15,6 @@ import { Separator } from "@/components/ui/separator";
 import { Card, CardTitle, CardHeader, CardContent, CardDescription } from "@/components/ui/card";
 
 export const SignUpCard = () => {
-  const [loading, setLoading] = useState(false);
-  const [loadingGithub, setLoadingGithub] = useState(false);
-  const [loadingGoogle, setLoadingGoogle] = useState(false);
-
   const mutation = useSignUp();
 
   const [name, setName] = useState("");
@@ -26,16 +22,11 @@ export const SignUpCard = () => {
   const [password, setPassword] = useState("");
 
   const onProviderSignUp = (provider: "github" | "google") => {
-    setLoading(true);
-    setLoadingGithub(provider === "github");
-    setLoadingGoogle(provider === "google");
-
     signIn(provider, { callbackUrl: "/" });
   };
 
   const onCredentialSignUp = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setLoading(true);
 
     mutation.mutate(
       {
@@ -64,13 +55,17 @@ export const SignUpCard = () => {
       {!!mutation.error && (
         <div className="bg-destructive/15 p-3 rounded-md flex items-center gap-x-2 text-sm text-destructive mb-6">
           <TriangleAlert className="size-4" />
-          <p>Something went wrong</p>
+          <p>
+            {mutation.error.message === "Email already in use" 
+              ? "This email is already registered. Please sign in instead."
+              : mutation.error.message || "Something went wrong"}
+          </p>
         </div>
       )}
       <CardContent className="space-y-5 px-0 pb-0">
         <form onSubmit={onCredentialSignUp} className="space-y-2.5">
           <Input
-            disabled={mutation.isPending || loading}
+            disabled={mutation.isPending}
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Full name"
@@ -78,7 +73,7 @@ export const SignUpCard = () => {
             required
           />
           <Input
-            disabled={mutation.isPending || loading}
+            disabled={mutation.isPending}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Email"
@@ -86,7 +81,7 @@ export const SignUpCard = () => {
             required
           />
           <Input
-            disabled={mutation.isPending || loading}
+            disabled={mutation.isPending}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Password"
@@ -99,7 +94,7 @@ export const SignUpCard = () => {
             className="w-full"
             type="submit"
             size="lg"
-            disabled={loading || mutation.isPending}
+            disabled={mutation.isPending}
           >
             {mutation.isPending ? (
               <Loader2 className="mr-2 size-5 top-2.5 left-2.5 animate-spin" />
@@ -111,37 +106,29 @@ export const SignUpCard = () => {
         <Separator />
         <div className="flex flex-col gap-y-2.5">
           <Button
-            disabled={mutation.isPending || loading}
+            disabled={mutation.isPending}
             onClick={() => onProviderSignUp("google")}
             variant="outline"
             size="lg"
             className="w-full relative"
           >
-            {loadingGoogle ? (
-              <Loader2 className="mr-2 size-5 top-2.5 left-2.5 absolute animate-spin" />
-            ) : (
-              <FcGoogle className="mr-2 size-5 top-2.5 left-2.5 absolute" />
-            )}
+            <FcGoogle className="mr-2 size-5 top-2.5 left-2.5 absolute" />
             Continue with Google
           </Button>
           <Button
-            disabled={mutation.isPending || loading}
+            disabled={mutation.isPending}
             onClick={() => onProviderSignUp("github")}
             variant="outline"
             size="lg"
             className="w-full relative"
           >
-            {loadingGithub ? (
-              <Loader2 className="mr-2 size-5 top-2.5 left-2.5 absolute animate-spin" />
-            ) : (
-              <FaGithub className="mr-2 size-5 top-2.5 left-2.5 absolute" />
-            )}
+            <FaGithub className="mr-2 size-5 top-2.5 left-2.5 absolute" />
             Continue with Github
           </Button>
         </div>
         <p className="text-xs text-muted-foreground">
           Already have an account?{" "}
-          <Link href="/sign-in" onClick={() => setLoading(true)}>
+          <Link href="/sign-in">
             <span className="text-sky-700 hover:underline">Sign in</span>
           </Link>
         </p>

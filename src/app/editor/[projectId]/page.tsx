@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { Loader, TriangleAlert } from "lucide-react";
 
 import { useGetProject } from "@/features/projects/api/use-get-project";
-
 import { Editor } from "@/features/editor/components/editor";
 import { Button } from "@/components/ui/button";
 
@@ -17,13 +19,24 @@ interface EditorProjectIdPageProps {
 const EditorProjectIdPage = ({
   params,
 }: EditorProjectIdPageProps) => {
+  const router = useRouter();
+  const { status } = useSession();
+  
   const { 
     data, 
     isLoading, 
     isError
   } = useGetProject(params.projectId);
 
-  if (isLoading || !data) {
+  // Redirect to sign-in if unauthenticated
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.push("/sign-in");
+    }
+  }, [status, router]);
+
+  // Show loading while checking auth or fetching data
+  if (status === "loading" || isLoading || !data) {
     return (
       <div className="h-full flex flex-col items-center justify-center">
         <Loader className="size-6 animate-spin text-muted-foreground" />
@@ -49,5 +62,5 @@ const EditorProjectIdPage = ({
 
   return <Editor initialData={data} />
 };
- 
+
 export default EditorProjectIdPage;

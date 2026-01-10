@@ -19,7 +19,8 @@ export const users = pgTable("user", {
   emailVerified: timestamp("emailVerified", { mode: "date" }),
   image: text("image"),
   password: text("password"),
-  username: text("username").unique(), // NEW: Added username field
+  username: text("username").unique(),
+  createdAt: timestamp("createdAt", { mode: "date" }).notNull().defaultNow(), // NEW: Registration date
 });
 
 export const usersRelations = relations(users, ({ many }) => ({

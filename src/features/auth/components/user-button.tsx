@@ -4,9 +4,9 @@ import { useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { CreditCard, Crown, Loader, LogOut, User } from "lucide-react";
 
-import { 
-  Avatar, 
-  AvatarFallback, 
+import {
+  Avatar,
+  AvatarFallback,
   AvatarImage
 } from "@/components/ui/avatar";
 import {
@@ -82,15 +82,17 @@ export const UserButton = () => {
             Billing
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem className="h-10" onClick={() => signOut()}>
+          <DropdownMenuItem
+            className="h-10"
+            onClick={() => signOut({ callbackUrl: "/sign-in" })}>
             <LogOut className="size-4 mr-2" />
             Log out
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <ProfileModal 
-        open={profileOpen} 
+      <ProfileModal
+        open={profileOpen}
         onOpenChange={setProfileOpen}
       />
     </>

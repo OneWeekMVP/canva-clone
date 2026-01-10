@@ -134,7 +134,7 @@ export const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
             <Separator />
 
             {/* Member Since - Read only */}
-            {user?.emailVerified && (
+            {user?.createdAt && (
               <div className="space-y-2">
                 <Label className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="size-4" />
@@ -142,7 +142,7 @@ export const ProfileModal = ({ open, onOpenChange }: ProfileModalProps) => {
                 </Label>
                 <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-md">
                   <span className="text-sm text-muted-foreground">
-                    {format(new Date(user.emailVerified), "MMMM d, yyyy")}
+                    {format(new Date(user.createdAt), "MMMM d, yyyy")}
                   </span>
                 </div>
               </div>

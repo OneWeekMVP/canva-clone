@@ -1,12 +1,53 @@
 import { z } from "zod";
 import { Hono } from "hono";
 import bcrypt from "bcryptjs";
-import { eq, and, ne } from "drizzle-orm";
+import { eq, and, ne, like } from "drizzle-orm";
 import { verifyAuth } from "@hono/auth-js";
 import { zValidator } from "@hono/zod-validator";
-
 import { db } from "@/db/drizzle";
 import { users } from "@/db/schema";
+
+// Helper function to generate username from name (like Telegram)
+function generateUsername(name: string): string {
+  // Remove special characters and convert to lowercase
+  let username = name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim()
+    .replace(/\s+/g, '_');
+  
+  // Remove leading/trailing underscores
+  username = username.replace(/^_+|_+$/g, '');
+  
+  // Ensure minimum length
+  if (username.length < 3) {
+    username = username + '_user';
+  }
+  
+  return username;
+}
+
+// Helper to find available username
+async function findAvailableUsername(baseName: string): Promise<string> {
+  let username = generateUsername(baseName);
+  let suffix = 1;
+  
+  // Keep trying until we find an available username
+  while (true) {
+    const existing = await db
+      .select()
+      .from(users)
+      .where(eq(users.username, username));
+    
+    if (existing.length === 0) {
+      return username;
+    }
+    
+    // Add number suffix if username exists
+    username = `${generateUsername(baseName)}${suffix}`;
+    suffix++;
+  }
+}
 
 const app = new Hono()
   .post(
@@ -32,10 +73,15 @@ const app = new Hono()
         return c.json({ error: "Email already in use" }, 400);
       }
 
+      // Generate unique username from name
+      const username = await findAvailableUsername(name);
+
       await db.insert(users).values({
         email,
         name,
         password: hashedPassword,
+        username,
+        createdAt: new Date(),
       });
 
       return c.json(null, 200);
@@ -59,6 +105,7 @@ const app = new Hono()
           username: users.username,
           image: users.image,
           emailVerified: users.emailVerified,
+          createdAt: users.createdAt,
         })
         .from(users)
         .where(eq(users.id, auth.token.id));
@@ -77,7 +124,7 @@ const app = new Hono()
       "json",
       z.object({
         name: z.string().min(1).optional(),
-        username: z.string().min(3).max(20).optional(),
+        username: z.string().min(3).max(20).regex(/^[a-z0-9_]+$/, "Username can only contain lowercase letters, numbers, and underscores").optional(),
       })
     ),
     async (c) => {
