@@ -1,24 +1,25 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 import { formatDistanceToNow } from "date-fns";
-import { 
-  AlertTriangle, 
-  CopyIcon, 
-  FileIcon, 
-  Loader, 
-  MoreHorizontal, 
+import {
+  AlertTriangle,
+  CopyIcon,
+  FileIcon,
+  Loader,
+  MoreHorizontal,
   Search,
   Trash,
   Pencil
 } from "lucide-react";
 import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { client } from "@/lib/hono";
 import { useGetProjects } from "@/features/projects/api/use-get-projects";
 import { useDeleteProject } from "@/features/projects/api/use-delete-project";
 import { useDuplicateProject } from "@/features/projects/api/use-duplicate-project";
-import { useUpdateProject } from "@/features/projects/api/use-update-project";
 
 import {
   DropdownMenuContent,
@@ -26,61 +27,60 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
+import {
   Table,
   TableRow,
   TableBody,
   TableCell,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useConfirm } from "@/hooks/use-confirm";
+import { useRenameDialog } from "@/hooks/use-rename-dialog";
 
 export const ProjectsSection = () => {
   const [ConfirmDialog, confirm] = useConfirm(
     "Are you sure?",
     "You are about to delete this project.",
   );
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState("");
+  const [RenameDialogComponent, openRenameDialog] = useRenameDialog();
 
+  const queryClient = useQueryClient();
   const duplicateMutation = useDuplicateProject();
   const removeMutation = useDeleteProject();
-  const updateMutation = useUpdateProject(editingId || "");
   const router = useRouter();
 
-  const startEditing = (id: string, currentName: string) => {
-    setEditingId(id);
-    setEditingName(currentName);
-  };
+  const renameMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      const response = await client.api.projects[":id"].$patch({
+        json: { name },
+        param: { id },
+      });
 
-  const handleRename = () => {
-    if (editingId && editingName.trim()) {
-      updateMutation.mutate(
-        { name: editingName.trim() },
+      if (!response.ok) {
+        throw new Error("Failed to rename project");
+      }
+
+      return await response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+
+  const handleRename = async (projectId: string, currentName: string) => {
+    const newName = await openRenameDialog(currentName);
+    if (newName && newName !== currentName) {
+      renameMutation.mutate(
+        { id: projectId, name: newName },
         {
           onSuccess: () => {
             toast.success("Project renamed successfully");
-            setEditingId(null);
-            setEditingName("");
           },
           onError: () => {
             toast.error("Failed to rename project");
           },
         }
       );
-    } else {
-      setEditingId(null);
-      setEditingName("");
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleRename();
-    } else if (e.key === "Escape") {
-      setEditingId(null);
-      setEditingName("");
     }
   };
 
@@ -173,8 +173,9 @@ export const ProjectsSection = () => {
   }
 
   return (
-    <div className="space-y-4"> 
+    <div className="space-y-4">
       <ConfirmDialog />
+      <RenameDialogComponent />
       <h3 className="font-semibold text-lg">
         Recent projects
       </h3>
@@ -182,89 +183,70 @@ export const ProjectsSection = () => {
         <TableBody>
           {data.pages.map((group, i) => (
             <React.Fragment key={i}>
-              {group.data.map((project) => {
-                const isEditing = editingId === project.id;
-
-                return (
-                  <TableRow key={project.id}>
-                    <TableCell
-                      onClick={isEditing ? undefined : () => router.push(`/editor/${project.id}`)}
-                      className="font-medium flex items-center gap-x-2 cursor-pointer"
-                    >
-                      <FileIcon className="size-6" />
-                      {isEditing ? (
-                        <Input
-                          value={editingName}
-                          onChange={(e) => setEditingName(e.target.value)}
-                          onBlur={handleRename}
-                          onKeyDown={handleKeyDown}
-                          className="h-8 border-blue-500 focus-visible:ring-blue-500"
-                          autoFocus
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ) : (
-                        project.name
-                      )}
-                    </TableCell>
-                    <TableCell
-                      onClick={() => router.push(`/editor/${project.id}`)}
-                      className="hidden md:table-cell cursor-pointer"
-                    >
-                      {project.width} x {project.height} px
-                    </TableCell>
-                    <TableCell
-                      onClick={() => router.push(`/editor/${project.id}`)}
-                      className="hidden md:table-cell cursor-pointer"
-                    >
-                      {formatDistanceToNow(project.updatedAt, {
-                        addSuffix: true,
-                      })}
-                    </TableCell>
-                    <TableCell className="flex items-center justify-end">
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            disabled={false}
-                            size="icon"
-                            variant="ghost"
-                          >
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-60">
-                          <DropdownMenuItem
-                            className="h-10 cursor-pointer"
-                            disabled={duplicateMutation.isPending}
-                            onClick={() => onCopy(project.id)}
-                          >
-                            <CopyIcon className="size-4 mr-2" />
-                            Make a copy
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="h-10 cursor-pointer"
-                            disabled={updateMutation.isPending}
-                            onSelect={(e) => {
-                              e.preventDefault();
-                              startEditing(project.id, project.name);
-                            }}
-                          >
-                            <Pencil className="size-4 mr-2" />
-                            Rename
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="h-10 cursor-pointer"
-                            disabled={removeMutation.isPending}
-                            onClick={() => onDelete(project.id)}
-                          >
-                            <Trash className="size-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
+              {group.data.map((project) => (
+                <TableRow key={project.id}>
+                  <TableCell
+                    onClick={() => router.push(`/editor/${project.id}`)}
+                    className="font-medium flex items-center gap-x-2 cursor-pointer"
+                  >
+                    <FileIcon className="size-6" />
+                    {project.name}
+                  </TableCell>
+                  <TableCell
+                    onClick={() => router.push(`/editor/${project.id}`)}
+                    className="hidden md:table-cell cursor-pointer"
+                  >
+                    {project.width} x {project.height} px
+                  </TableCell>
+                  <TableCell
+                    onClick={() => router.push(`/editor/${project.id}`)}
+                    className="hidden md:table-cell cursor-pointer"
+                  >
+                    {formatDistanceToNow(project.updatedAt, {
+                      addSuffix: true,
+                    })}
+                  </TableCell>
+                  <TableCell className="flex items-center justify-end">
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          disabled={false}
+                          size="icon"
+                          variant="ghost"
+                        >
+                          <MoreHorizontal className="size-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-60">
+                        <DropdownMenuItem
+                          className="h-10 cursor-pointer"
+                          disabled={duplicateMutation.isPending}
+                          onClick={() => onCopy(project.id)}
+                        >
+                          <CopyIcon className="size-4 mr-2" />
+                          Make a copy
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="h-10 cursor-pointer"
+                          disabled={renameMutation.isPending}
+                          onClick={() => handleRename(project.id, project.name)}
+                        >
+                          <Pencil className="size-4 mr-2" />
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="h-10 cursor-pointer"
+                          disabled={removeMutation.isPending}
+                          onClick={() => onDelete(project.id)}
+                        >
+                          <Trash className="size-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
             </React.Fragment>
           ))}
         </TableBody>

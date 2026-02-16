@@ -24,7 +24,6 @@ import { Logo } from "@/features/editor/components/logo";
 import { cn } from "@/lib/utils";
 import { Hint } from "@/components/hint";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import {
   DropdownMenu,
@@ -34,6 +33,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useGetProject } from "@/features/projects/api/use-get-project";
 import { useUpdateProject } from "@/features/projects/api/use-update-project";
+import { useRenameDialog } from "@/hooks/use-rename-dialog";
 
 interface NavbarProps {
   id: string;
@@ -48,8 +48,8 @@ export const Navbar = ({
   activeTool,
   onChangeActiveTool,
 }: NavbarProps) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [projectName, setProjectName] = useState("");
+  const [RenameDialog, openRenameDialog] = useRenameDialog();
 
   const { data } = useGetProject(id);
   const renameMutation = useUpdateProject(id);
@@ -60,35 +60,21 @@ export const Navbar = ({
     }
   }, [data?.name]);
 
-  const startEditing = () => {
-    setIsEditing(true);
-  };
-
-  const handleRename = () => {
-    if (projectName.trim() && projectName !== data?.name) {
+  const handleRename = async () => {
+    const newName = await openRenameDialog(projectName || "Untitled");
+    if (newName && newName !== projectName) {
       renameMutation.mutate(
-        { name: projectName.trim() },
+        { name: newName },
         {
           onSuccess: () => {
             toast.success("Project renamed successfully");
-            setIsEditing(false);
+            setProjectName(newName);
           },
           onError: () => {
             toast.error("Failed to rename project");
           },
         }
       );
-    } else {
-      setIsEditing(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") {
-      handleRename();
-    } else if (e.key === "Escape") {
-      setIsEditing(false);
-      setProjectName(data?.name || "");
     }
   };
 
@@ -121,6 +107,7 @@ export const Navbar = ({
 
   return (
     <nav className="w-full flex items-center p-4 h-[68px] gap-x-8 border-b lg:pl-[34px]">
+      <RenameDialog />
       <Logo />
       <div className="w-full flex items-center gap-x-1 h-full">
         <DropdownMenu modal={false}>
@@ -132,13 +119,12 @@ export const Navbar = ({
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="min-w-60">
             <DropdownMenuItem
-              onSelect={(e) => {
-                e.preventDefault();
-                startEditing();
-              }}
+              onClick={handleRename}
               className="flex items-center gap-x-2"
             >
-              <Pencil className="size-4" />
+              <div className="size-8 flex items-center justify-center shrink-0">
+                <Pencil className="size-6" />
+              </div>
               <div>
                 <p>Rename</p>
                 <p className="text-xs text-muted-foreground">
@@ -162,24 +148,13 @@ export const Navbar = ({
         </DropdownMenu>
         <Separator orientation="vertical" className="mx-2" />
 
-        {/* Always show project name */}
-        {isEditing ? (
-          <Input
-            value={projectName}
-            onChange={(e) => setProjectName(e.target.value)}
-            onBlur={handleRename}
-            onKeyDown={handleKeyDown}
-            className="h-8 w-auto min-w-[150px] max-w-[300px] border-blue-500 focus-visible:ring-blue-500"
-            autoFocus
-          />
-        ) : (
-          <div
-            className="text-sm font-medium truncate max-w-[200px] cursor-pointer hover:text-blue-600"
-            onClick={startEditing}
-          >
-            {projectName || "Untitled"}
-          </div>
-        )}
+        {/* Project name - click to open rename dialog */}
+        <div
+          className="text-sm font-medium truncate max-w-[200px] cursor-pointer hover:text-blue-600"
+          onClick={handleRename}
+        >
+          {projectName || "Untitled"}
+        </div>
         <Separator orientation="vertical" className="mx-2" />
         <Hint label="Select" side="bottom" sideOffset={10}>
           <Button
