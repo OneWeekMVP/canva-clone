@@ -18,11 +18,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </main>
         </div>
       </div>
-      <Script
+      {/* <Script
         src="https://echo-adventures-widget.vercel.app/widget.js"
         data-organization-id="org_37uOSJHUWb5IkMJFFUy9keG1Ret"
         strategy="afterInteractive"
-      />
+      /> */}
     </>
   );
 };
